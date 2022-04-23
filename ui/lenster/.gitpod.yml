@@ -1,0 +1,27 @@
+tasks:
+  - name: Setup
+    init: |
+      yarn install
+      yarn codegen
+      cp .env.example .env
+    command: yarn dev
+
+  - command: |
+      clear
+      echo "Waiting for server to start 🕒"
+      gp await-port 3000
+      scripts/gp-welcome.sh
+
+ports:
+  - port: 3000 # Web app
+    visibility: public
+    onOpen: notify
+
+vscode:
+  extensions:
+    - dbaeumer.vscode-eslint
+    - esbenp.prettier-vscode
+    - wix.vscode-import-cost
+    - formulahendry.auto-close-tag
+    - bradlc.vscode-tailwindcss
+    - pkief.material-icon-theme
