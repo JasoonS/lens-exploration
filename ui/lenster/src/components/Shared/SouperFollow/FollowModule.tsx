@@ -1,4 +1,6 @@
 import LensHubProxy from '@abis/LensHubProxy.json'
+import SuperFollowModuleAbi from '@abis/SuperFollowModule.json'
+import CurrencyAbi from '@abis/Currency.json'
 import { gql, useMutation, useQuery } from '@apollo/client'
 import { ALLOWANCE_SETTINGS_QUERY } from '@components/Settings/Allowance'
 import AllowanceButton from '@components/Settings/Allowance/Button'
@@ -97,6 +99,59 @@ const CREATE_FOLLOW_TYPED_DATA_MUTATION = gql`
   }
 `
 
+interface CustomApproveProps {
+  setApproved: Dispatch<boolean>
+}
+
+const CustomApproveButton: FC<CustomApproveProps> = ({ setApproved }) => {
+  const { activeChain } = useNetwork()
+  const { data: account } = useAccount()
+
+  let spender = '0x5A808C1FD6F0b46a06B51B6ea16a4f8C83124E67' // hackathon TODO: be careful of possible redeployment
+  let amount = '999999999999999999999999'
+
+  const { isLoading: writeLoading, write } = useContractWrite(
+    {
+      addressOrName: '0x06577b0b09e69148a45b866a0de6643b6cac40af',
+      contractInterface: CurrencyAbi
+    },
+    'approve',
+    {
+      args: [spender, amount],
+      onSuccess() {
+        setApproved(true)
+        toast.success('Successfully approved contract')
+        trackEvent('Successfully approved contract')
+      },
+      onError(error) {
+        toast.error(error?.message)
+      }
+    }
+  )
+
+  const approveContractSpend = () => {
+    if (!account?.address) {
+      toast.error(CONNECT_WALLET)
+    } else if (activeChain?.id !== CHAIN_ID) {
+      toast.error(WRONG_NETWORK)
+    } else {
+      write()
+      console.log('call the contract function')
+    }
+  }
+
+  return (
+    <Button
+      className="text-sm !px-3 !py-1.5 "
+      variant="primary"
+      outline
+      onClick={approveContractSpend}
+    >
+      Approve Golden Circle contract
+    </Button>
+  )
+}
+
 interface Props {
   profile: Profile
   setFollowing: Dispatch<boolean>
@@ -110,6 +165,7 @@ const FollowModule: FC<Props> = ({
 }) => {
   const { currentUser } = useContext(AppContext)
   const [allowed, setAllowed] = useState<boolean>(true)
+  const [approved, setApproved] = useState<boolean>(false)
   const { activeChain } = useNetwork()
   const { data: account } = useAccount()
   const { isLoading: signLoading, signTypedDataAsync } = useSignTypedData({
@@ -119,7 +175,7 @@ const FollowModule: FC<Props> = ({
   })
   const { isLoading: writeLoading, write } = useContractWrite(
     {
-      addressOrName: LENSHUB_PROXY,
+      addressOrName: LENSHUB_PROXY, // TODO:
       contractInterface: LensHubProxy
     },
     'followWithSig',
@@ -151,24 +207,24 @@ const FollowModule: FC<Props> = ({
   const followModule: FeeFollowModuleSettings =
     data?.profiles?.items[0]?.followModule
 
-  const { data: allowanceData, loading: allowanceLoading } = useQuery(
-    ALLOWANCE_SETTINGS_QUERY,
-    {
-      variables: {
-        request: {
-          currencies: followModule?.amount?.asset?.address,
-          followModules: 'FeeFollowModule',
-          collectModules: [],
-          referenceModules: []
-        }
-      },
-      skip: !followModule?.amount?.asset?.address || !currentUser,
-      onCompleted(data) {
-        setAllowed(data?.approvedModuleAllowanceAmount[0]?.allowance !== '0x00')
-        consoleLog('Query', '#8b5cf6', `Fetched allowance data`)
-      }
-    }
-  )
+  // const { data: allowanceData, loading: allowanceLoading } = useQuery(
+  //   ALLOWANCE_SETTINGS_QUERY,
+  //   {
+  //     variables: {
+  //       request: {
+  //         currencies: followModule?.amount?.asset?.address,
+  //         followModules: 'FeeFollowModule',
+  //         collectModules: [],
+  //         referenceModules: []
+  //       }
+  //     },
+  //     skip: !followModule?.amount?.asset?.address || !currentUser,
+  //     onCompleted(data) {
+  //       setAllowed(data?.approvedModuleAllowanceAmount[0]?.allowance !== '0x00')
+  //       consoleLog('Query', '#8b5cf6', `Fetched allowance data`)
+  //     }
+  //   }
+  // )
 
   const [createFollowTypedData, { loading: typedDataLoading }] = useMutation(
     CREATE_FOLLOW_TYPED_DATA_MUTATION,
@@ -207,7 +263,6 @@ const FollowModule: FC<Props> = ({
     }
   )
 
-  // Hackathon todo: Cater to our follow module
   const createFollow = () => {
     if (!account?.address) {
       toast.error(CONNECT_WALLET)
@@ -234,12 +289,33 @@ const FollowModule: FC<Props> = ({
     }
   }
 
+  // Hackathon todo: Cater to our follow module
   const createGoldenCircleFollow = () => {
     if (!account?.address) {
       toast.error(CONNECT_WALLET)
     } else if (activeChain?.id !== CHAIN_ID) {
       toast.error(WRONG_NETWORK)
     } else {
+      const [{ data, error, loading }, write] = useContractWrite(
+        {
+          addressOrName: '0x5A808C1FD6F0b46a06B51B6ea16a4f8C83124E67',
+          contractInterface: SuperFollowModuleAbi
+        },
+        'upgradeToSuperFollower',
+        {
+          args: [],
+          onSuccess() {
+            // setFollowing(true)
+            // setShowFollowModal(false)
+            toast.success('Joined golden circle successfully!')
+            trackEvent('Joined golden circle')
+          },
+          onError(error) {
+            toast.error(error?.message)
+          }
+        }
+      )
+
       console.log('call the contract function')
     }
   }
@@ -336,7 +412,7 @@ const FollowModule: FC<Props> = ({
 
             <div className="w-full pl-2">
               <Input
-                label="Pre fund monthly pledge"
+                label="Deposit to fund pledge"
                 helper={
                   <span>
                     Deposit funds into the contract that can be used to stream
@@ -382,11 +458,14 @@ const FollowModule: FC<Props> = ({
         </div>
       </div>
       {currentUser ? (
-        allowanceLoading ? (
-          <div className="mt-5 w-28 rounded-lg h-[34px] shimmer" />
-        ) : allowed ? (
+        <div className="flex flex-row mt-5">
+          {!approved ? (
+            <div className="mr-5">
+              <CustomApproveButton setApproved={setApproved} />
+            </div>
+          ) : null}
           <Button
-            className="text-sm !px-3 !py-1.5 mt-5"
+            className="text-sm !px-3 !py-1.5 "
             variant="gold"
             outline
             onClick={createGoldenCircleFollow}
@@ -401,17 +480,7 @@ const FollowModule: FC<Props> = ({
           >
             Join the golden circle
           </Button>
-        ) : (
-          // Hackathon todo: Adjust to say approve tokens
-          <div className="mt-5">
-            <AllowanceButton
-              title="Approve golden circle follow module"
-              module={allowanceData?.approvedModuleAllowanceAmount[0]}
-              allowed={allowed}
-              setAllowed={setAllowed}
-            />
-          </div>
-        )
+        </div>
       ) : null}
     </div>
   )
