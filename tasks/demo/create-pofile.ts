@@ -10,9 +10,10 @@ task('create-profile', 'creates a profile').setAction(async ({ }, hre) => {
   const addrs = getAddrs();
   const lensHub = LensHub__factory.connect(addrs['lensHub proxy'], governance);
   const superFollowModuleAddr = addrs['superFollow'];
+  const currencyAddress = addrs.currency;
   const superFollowModule = SuperFollowModule__factory.connect(superFollowModuleAddr, governance);
 
-  const followModuleInitData = await superFollowModule.hackToEncodeValueAsBytes(1, "100000000000");
+  const followModuleInitData = await superFollowModule.hackToEncodeValueAsBytes(1, "100000000000", currencyAddress);
 
   await waitForTx(lensHub.whitelistProfileCreator(user.address, true));
 

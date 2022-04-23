@@ -16,7 +16,8 @@ contract ExampleTest is DSTest {
         SuperFollowModule.InitializerInput memory initializerInput = SuperFollowModule
             .InitializerInput(
                 20,
-                patronageDenominator / 10 /* 10% anually */
+                patronageDenominator / 10, /* 10% anually */
+                address(20000)
             );
 
         followModule.initializeFollowModule(321, abi.encode(initializerInput));

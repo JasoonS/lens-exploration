@@ -20,7 +20,7 @@ npx hardhat create-profile --network localhost
 npx hardhat follow --network localhost
 ```
 
-npm run full-deploy-eth-amsterdam-demo; npx hardhat unpause --network localhost; npx hardhat create-profile --network localhost
+npm run full-deploy-eth-amsterdam-demo; npx hardhat unpause --network localhost; npx hardhat create-profile --network localhost; npx hardhat follow --network localhost
 
 ```
      &&&&&                        &&&&&&&&&&&&&&&&&&&&&&&&     &&&&&&&&&&              &&&&&         /&&&&&&&&&&&&&&&&&

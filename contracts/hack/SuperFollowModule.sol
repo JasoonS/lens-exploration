@@ -263,16 +263,18 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
     struct InitializerInput {
         uint256 numberOfSuperFollowers;
         uint256 patronageNumerator;
+        address erc20PaymentTokenAddress;
     }
 
-    function hackToEncodeValueAsBytes(uint256 numberOfSuperFollowers, uint256 patronageNumerator)
-        public
-        pure
-        returns (bytes memory)
-    {
+    function hackToEncodeValueAsBytes(
+        uint256 numberOfSuperFollowers,
+        uint256 patronageNumerator,
+        address erc20PaymentTokenAddress
+    ) public pure returns (bytes memory) {
         InitializerInput memory initializerInput = InitializerInput(
             numberOfSuperFollowers,
-            patronageNumerator
+            patronageNumerator,
+            erc20PaymentTokenAddress
         );
 
         return abi.encode(initializerInput);
@@ -297,6 +299,7 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
 
         maxNumberOfSuperFollowers[profileId] = inputData.numberOfSuperFollowers;
         patronageNumerator[profileId] = inputData.patronageNumerator;
+        whitelistedCollateralUsed[profileId] = inputData.erc20PaymentTokenAddress;
 
         return abi.encode(0);
     }
@@ -321,11 +324,9 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
         address follower,
         uint256 followNFTTokenId
     ) external view returns (bool) {
-        // TODO: collect h-tax and make sure follower is liquid.
+        // TODO: Check that the address owns the followNFTTokenId.
         if (state[profileId][followNFTTokenId] == FollowState.SuperFollow) {
-            if (
-                patronageOwed(profileId, followNFTTokenId) >= deposit[profileId][followNFTTokenId]
-            ) {
+            if (patronageOwed(profileId, followNFTTokenId) < deposit[profileId][followNFTTokenId]) {
                 return true;
             } else {
                 return false;
