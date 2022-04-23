@@ -2,7 +2,12 @@ pragma solidity 0.8.13;
 
 import '../interfaces/IFollowModule.sol';
 
-contract FunkyFollowModule is IFollowModule {
+contract SuperFollowModule is IFollowModule {
+    // profileId => max number of super followers
+    mapping(uint256 => uint256) numberOfSuperFollowers;
+    // profileId => follewerId => isFollower
+    mapping(uint256 => mapping(uint256 => bool)) registeredSuperFollower;
+
     /**
      * @notice Initializes a follow module for a given Lens profile. This can only be called by the hub contract.
      *
@@ -79,5 +84,14 @@ contract FunkyFollowModule is IFollowModule {
         uint256 followNFTTokenId
     ) external view returns (bool) {
         return true;
+    }
+
+    function isSuperFollower(
+        uint256 profileId,
+        address follower,
+        uint256 followNFTTokenId
+    ) external view returns (bool) {
+        // TODO: collect h-tax and make sure follower is liquid.
+        return registeredSuperFollower[profileId][followNFTTokenId];
     }
 }

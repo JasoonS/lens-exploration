@@ -3,13 +3,13 @@ pragma solidity 0.8.13;
 
 import '@float-capital/ds-test/src/test.sol';
 
-import '../FunkyFollowModule.sol';
+import '../SuperFollowModule.sol';
 
 contract ExampleTest is DSTest {
-    FunkyFollowModule followModule;
+    SuperFollowModule followModule;
 
     function setUp() public {
-        followModule = new FunkyFollowModule();
+        followModule = new SuperFollowModule();
 
         followModule.initializeFollowModule(321, abi.encode(22));
     }
