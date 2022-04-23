@@ -295,7 +295,7 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
             'patronageNumerator not in range'
         );
 
-        numberOfSuperFollowers[profileId] = inputData.numberOfSuperFollowers;
+        maxNumberOfSuperFollowers[profileId] = inputData.numberOfSuperFollowers;
         patronageNumerator[profileId] = inputData.patronageNumerator;
 
         return abi.encode(0);
