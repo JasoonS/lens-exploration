@@ -11,7 +11,7 @@ contract ExampleTest is DSTest {
     function setUp() public {
         followModule = new SuperFollowModule(address(5));
 
-        followModule.initializeFollowModule(321, abi.encode(22));
+        // followModule.initializeFollowModule(321, abi.encode(22));
     }
 
     function testExample() public {

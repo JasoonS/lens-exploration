@@ -1,10 +1,11 @@
+///// this contract is heavily inspired by the wildcards contract (V2): https://github.com/wildcards-world/contracts/blob/master/mainnet/contracts/previousVersions/WildcardSteward_v2.sol
+//         All credit to the awesome wildcards team 💪
+
 pragma solidity 0.8.13;
 
 import {IFollowModule} from '../interfaces/IFollowModule.sol';
 import {ModuleBase} from '../core/modules/ModuleBase.sol';
 import {FollowValidatorFollowModuleBase} from '../core/modules/follow/FollowValidatorFollowModuleBase.sol';
-
-///// this contract is heavily inspired by the wildcards contract (V2): https://github.com/wildcards-world/contracts/blob/master/mainnet/contracts/previousVersions/WildcardSteward_v2.sol
 
 contract MintManager {
     // Might not use this contract - intention is to manage payout of erc20 tokens.
@@ -48,37 +49,44 @@ contract HarbergerTaxStuff {
         NormalFollow,
         SuperFollow
     }
-    // profileId => tokenId => state
+    // profileId => followNFTTokenId => state
     mapping(uint256 => mapping(uint256 => FollowState)) public state;
 
     address public admin;
+
+    // profileId => max number of super followers
+    mapping(uint256 => uint256) numberOfSuperFollowers;
 
     //////////////// NEW variables in v2///////////////////
     // mapping(uint256 => uint256) public tokenGenerationRate; // we can reuse the patronage denominator
 
     // MintManager public mintManager;
 
-    event Buy(uint256 indexed tokenId, address indexed owner, uint256 price);
-    event PriceChange(uint256 indexed tokenId, uint256 newPrice);
+    event Buy(uint256 indexed followNFTTokenId, address indexed owner, uint256 price);
+    event PriceChange(uint256 indexed followNFTTokenId, uint256 newPrice);
     event Foreclosure(address indexed prevOwner, uint256 foreclosureTime);
     event RemainingDepositUpdate(address indexed tokenPatron, uint256 remainingDeposit);
 
     event AddToken(
-        uint256 indexed tokenId,
+        uint256 indexed followNFTTokenId,
         uint256 patronageNumerator,
         uint256 tokenGenerationRate
     );
     // QUESTION: in future versions, should these two events (CollectPatronage and CollectLoyalty) be combined into one? - they only ever happen at the same time.
     event CollectPatronage(
-        uint256 indexed tokenId,
+        uint256 indexed followNFTTokenId,
         address indexed patron,
         uint256 remainingDeposit,
         uint256 amountReceived
     );
-    event CollectLoyalty(uint256 indexed tokenId, address indexed patron, uint256 amountRecieved);
+    event CollectLoyalty(
+        uint256 indexed followNFTTokenId,
+        address indexed patron,
+        uint256 amountRecieved
+    );
 
-    // modifier onlyPatron(uint256 tokenId) {
-    //     require(msg.sender == currentPatron[tokenId], 'Not patron');
+    // modifier onlyPatron(uint256 followNFTTokenId) {
+    //     require(msg.sender == currentPatron[followNFTTokenId], 'Not patron');
     //     _;
     // }
 
@@ -87,16 +95,16 @@ contract HarbergerTaxStuff {
         _;
     }
 
-    // modifier onlyReceivingbeneficiaryOrAdmin(uint256 tokenId) {
+    // modifier onlyReceivingbeneficiaryOrAdmin(uint256 followNFTTokenId) {
     //     require(
-    //         msg.sender == beneficiary[tokenId] || msg.sender == admin,
+    //         msg.sender == beneficiary[followNFTTokenId] || msg.sender == admin,
     //         'Not beneficiary or admin'
     //     );
     //     _;
     // }
 
-    modifier collectPatronage(uint256 profileId, uint256 tokenId) {
-        _collectPatronage(profileId, tokenId);
+    modifier collectPatronage(uint256 profileId, uint256 followNFTTokenId) {
+        _collectPatronage(profileId, followNFTTokenId);
         _;
     }
 
@@ -105,80 +113,121 @@ contract HarbergerTaxStuff {
     //     _;
     // }
 
-    function patronageOwed(uint256 profileId, uint256 tokenId)
+    function patronageOwed(uint256 profileId, uint256 followNFTTokenId)
         public
         view
         returns (uint256 patronageDue)
     {
-        uint256 tokenTimeLastCollected = timeLastCollected[profileId][tokenId];
+        uint256 tokenTimeLastCollected = timeLastCollected[profileId][followNFTTokenId];
         if (tokenTimeLastCollected == 0) return 0;
 
         return
-            ((price[profileId][tokenId] * (block.timestamp - tokenTimeLastCollected)) /
+            ((price[profileId][followNFTTokenId] * (block.timestamp - tokenTimeLastCollected)) /
                 (patronageDenominator)) / (365 days);
     }
 
-    function _foreclose(uint256 profileId, uint256 tokenId) internal {
+    function _foreclose(uint256 profileId, uint256 followNFTTokenId) internal {
         // become steward of assetToken (aka foreclose)
-        state[profileId][tokenId] = FollowState.NormalFollow;
+        state[profileId][followNFTTokenId] = FollowState.NormalFollow;
 
-        // emit Foreclosure(currentOwner, timeLastCollected[tokenId]);
+        // emit Foreclosure(currentOwner, timeLastCollected[followNFTTokenId]);
     }
 
-    function _collectPatronage(uint256 profileId, uint256 tokenId) public {
+    function _collectPatronage(uint256 profileId, uint256 followNFTTokenId) public {
         // determine patronage to pay
-        if (state[profileId][tokenId] == FollowState.SuperFollow) {
-            // address currentOwner = currentPatron[tokenId];
-            uint256 previousTokenCollection = timeLastCollected[profileId][tokenId];
-            uint256 patronageOwedByTokenPatron = patronageOwed(profileId, tokenId);
-            // _collectLoyalty(tokenId); // This needs to be called before before the token may be foreclosed next section
+        if (state[profileId][followNFTTokenId] == FollowState.SuperFollow) {
+            // address currentOwner = currentPatron[followNFTTokenId];
+            uint256 previousTokenCollection = timeLastCollected[profileId][followNFTTokenId];
+            uint256 patronageOwedByTokenPatron = patronageOwed(profileId, followNFTTokenId);
+            // _collectLoyalty(followNFTTokenId); // This needs to be called before before the token may be foreclosed next section
             uint256 collection;
-            uint256 currentDeposit = deposit[profileId][tokenId];
+            uint256 currentDeposit = deposit[profileId][followNFTTokenId];
 
             // it should foreclose and take stewardship
             if (patronageOwedByTokenPatron >= currentDeposit) {
                 uint256 newTimeLastCollected = previousTokenCollection +
                     (
                         (((block.timestamp - (previousTokenCollection)) *
-                            (deposit[profileId][tokenId])) / (patronageOwedByTokenPatron))
+                            (deposit[profileId][followNFTTokenId])) / (patronageOwedByTokenPatron))
                     );
 
-                timeLastCollected[profileId][tokenId] = newTimeLastCollected;
+                timeLastCollected[profileId][followNFTTokenId] = newTimeLastCollected;
                 // timeLastCollectedPatron[currentOwner] = newTimeLastCollected;
                 collection =
-                    (((price[profileId][tokenId] *
+                    (((price[profileId][followNFTTokenId] *
                         (newTimeLastCollected - (previousTokenCollection))) *
-                        (patronageNumerator[tokenId])) / (patronageDenominator)) /
+                        (patronageNumerator[followNFTTokenId])) / (patronageDenominator)) /
                     (365 days);
-                deposit[profileId][tokenId] = 0;
-                _foreclose(profileId, tokenId);
+                deposit[profileId][followNFTTokenId] = 0;
+                _foreclose(profileId, followNFTTokenId);
             } else {
                 collection =
-                    (((price[profileId][tokenId] * (block.timestamp - (previousTokenCollection))) *
-                        (patronageNumerator[tokenId])) / (patronageDenominator)) /
+                    (((price[profileId][followNFTTokenId] *
+                        (block.timestamp - (previousTokenCollection))) *
+                        (patronageNumerator[followNFTTokenId])) / (patronageDenominator)) /
                     (365 days);
 
-                timeLastCollected[profileId][tokenId] = block.timestamp;
-                deposit[profileId][tokenId] = currentDeposit - (patronageOwedByTokenPatron);
+                timeLastCollected[profileId][followNFTTokenId] = block.timestamp;
+                deposit[profileId][followNFTTokenId] =
+                    currentDeposit -
+                    (patronageOwedByTokenPatron);
             }
 
             beneficiaryFunds[profileId] = beneficiaryFunds[profileId] + (collection);
             // if foreclosed, tokens are minted and sent to the steward since _foreclose is already called.
-            // emit CollectPatronage(tokenId, currentOwner, deposit[currentOwner], collection);
+            // emit CollectPatronage(followNFTTokenId, currentOwner, deposit[currentOwner], collection);
         }
+    }
+
+    function buy(
+        uint256 profileId,
+        uint256 followNFTTokenId,
+        uint256 _newPrice,
+        uint256 previousPrice
+    ) public payable collectPatronage(profileId, followNFTTokenId) {
+        /* 
+        // require(state[profileId][followNFTTokenId] == FollowState.Owned, 'token on auction');
+        require(price[tokenId] == previousPrice, 'must specify current price accurately');
+        require(_newPrice > 0, 'Price is zero');
+        require(msg.value > price[followNFTTokenId], 'Not enough'); // >, coz need to have at least something for deposit
+
+        if (state[followNFTTokenId] == StewardState.Owned) {
+            uint256 totalToPayBack = price[followNFTTokenId];
+            // NOTE: pay back the deposit only if it is the only token the patron owns.
+            if (
+                totalPatronOwnedTokenCost[tokenPatron] ==
+                price[followNFTTokenId].mul(patronageNumerator[followNFTTokenId])
+            ) {
+                totalToPayBack = totalToPayBack.add(deposit[tokenPatron]);
+                deposit[tokenPatron] = 0;
+            }
+
+            // pay previous owner their price + deposit back.
+            address payable payableCurrentPatron = address(uint160(tokenPatron));
+            (bool transferSuccess, ) = payableCurrentPatron.call.gas(2300).value(totalToPayBack)(
+                ''
+            );
+            if (!transferSuccess) {
+                deposit[tokenPatron] = deposit[tokenPatron].add(totalToPayBack);
+            }
+        } else if (state[followNFTTokenId] == StewardState.Foreclosed) {
+            state[followNFTTokenId] = StewardState.Owned;
+            timeLastCollected[followNFTTokenId] = now;
+            timeLastCollectedPatron[msg.sender] = now;
+        }
+
+        deposit[msg.sender] = deposit[msg.sender].add(msg.value.sub(price[followNFTTokenId]));
+        transferAssetTokenTo(followNFTTokenId, currentOwner, tokenPatron, msg.sender, _newPrice);
+        emit Buy(followNFTTokenId, msg.sender, _newPrice); */
     }
 }
 
 contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, HarbergerTaxStuff {
-    // profileId => max number of super followers
-    mapping(uint256 => uint256) numberOfSuperFollowers;
-    // profileId => follewerId => isFollower
-    mapping(uint256 => mapping(uint256 => bool)) registeredSuperFollower;
-
     constructor(address hub) ModuleBase(hub) {}
 
     struct InitializerInput {
-        uint256 patronageDenominator;
+        uint256 numberOfSuperFollowers;
+        uint256 patronageNumerator;
     }
 
     function initializeFollowModule(uint256 profileId, bytes calldata data)
@@ -187,7 +236,19 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
     {
         InitializerInput memory inputData = abi.decode(data, (InitializerInput));
 
-        patronageDenominator = inputData.patronageDenominator;
+        // TODO: do some more data validation on the input data.
+        require(
+            inputData.numberOfSuperFollowers > 0 && inputData.numberOfSuperFollowers < 100000,
+            'num super followers not in range'
+        );
+        require(
+            inputData.patronageNumerator >= (patronageDenominator / 100) && /* 1% anually */
+                inputData.patronageNumerator <= (patronageDenominator * 10), /* 1000% anually */
+            'patronageNumerator not in range'
+        );
+
+        numberOfSuperFollowers[profileId] = inputData.numberOfSuperFollowers;
+        patronageNumerator[profileId] = inputData.patronageNumerator;
 
         return abi.encode(0);
     }
