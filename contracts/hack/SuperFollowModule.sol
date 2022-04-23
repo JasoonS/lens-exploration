@@ -6,6 +6,10 @@ pragma solidity 0.8.13;
 import {IFollowModule} from '../interfaces/IFollowModule.sol';
 import {ModuleBase} from '../core/modules/ModuleBase.sol';
 import {FollowValidatorFollowModuleBase} from '../core/modules/follow/FollowValidatorFollowModuleBase.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+
+import {ILensHub} from '../interfaces/ILensHub.sol';
+import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
 /*
 // NOTE:
@@ -15,8 +19,11 @@ import {FollowValidatorFollowModuleBase} from '../core/modules/follow/FollowVali
    -- Add more customization, and admin roles to edit configuration.
 */
 contract HarbergerTaxStuff {
-    constructor(uint256 _patronageDenominator) {
+    address public hub;
+
+    constructor(uint256 _patronageDenominator, address _HUB) {
         patronageDenominator = _patronageDenominator;
+        hub = _HUB;
     }
 
     /*
@@ -62,7 +69,10 @@ contract HarbergerTaxStuff {
     address public admin;
 
     // profileId => max number of super followers
+    mapping(uint256 => uint256) maxNumberOfSuperFollowers; // need to set in constructor!!
     mapping(uint256 => uint256) numberOfSuperFollowers;
+
+    mapping(uint256 => address) whitelistedCollateralUsed; // need to initialize.
 
     //////////////// NEW variables in v2///////////////////
     // mapping(uint256 => uint256) public tokenGenerationRate; // we can reuse the patronage denominator
@@ -92,33 +102,15 @@ contract HarbergerTaxStuff {
         uint256 amountRecieved
     );
 
-    // modifier onlyPatron(uint256 followNFTTokenId) {
-    //     require(msg.sender == currentPatron[followNFTTokenId], 'Not patron');
-    //     _;
-    // }
-
     modifier onlyAdmin() {
         require(msg.sender == admin, 'Not admin');
         _;
     }
 
-    // modifier onlyReceivingbeneficiaryOrAdmin(uint256 followNFTTokenId) {
-    //     require(
-    //         msg.sender == beneficiary[followNFTTokenId] || msg.sender == admin,
-    //         'Not beneficiary or admin'
-    //     );
-    //     _;
-    // }
-
     modifier collectPatronage(uint256 profileId, uint256 followNFTTokenId) {
         _collectPatronage(profileId, followNFTTokenId);
         _;
     }
-
-    // modifier collectPatronageAddress(address tokenPatron) {
-    //     _collectPatronagePatron(tokenPatron);
-    //     _;
-    // }
 
     function patronageOwed(uint256 profileId, uint256 followNFTTokenId)
         public
@@ -136,7 +128,9 @@ contract HarbergerTaxStuff {
     function _foreclose(uint256 profileId, uint256 followNFTTokenId) internal {
         // become steward of assetToken (aka foreclose)
         state[profileId][followNFTTokenId] = FollowState.NormalFollow;
+        numberOfSuperFollowers[profileId]--; // decrement number of superfollowers
 
+        // send the token anywhere?
         // emit Foreclosure(currentOwner, timeLastCollected[followNFTTokenId]);
     }
 
@@ -186,52 +180,81 @@ contract HarbergerTaxStuff {
         }
     }
 
-    function buy(
+    // Used to upgrade an existing follow to super follow NFT.
+    // Requires you to already own a follower NFT.
+    // oldFollowNFTTokenId is the id of the follow token you are going to take the super privledge from
+    // newFollowNFTTokenId is the id of your follow tokenID that you are going to upgrade.
+    // If this is before match super followers are reached, simply pass oldFollowNFTTokenId = newFollowNFTTokenId
+    // check weird case where collect patronage makes the oldFollowNFTTokenId no longer a super token!
+    function upgradeToSuperFollower(
         uint256 profileId,
-        uint256 followNFTTokenId,
+        uint256 oldFollowNFTTokenId,
+        uint256 newFollowNFTTokenId,
         uint256 _newPrice,
-        uint256 previousPrice
-    ) public payable collectPatronage(profileId, followNFTTokenId) {
-        /* 
-        // require(state[profileId][followNFTTokenId] == FollowState.Owned, 'token on auction');
-        require(price[tokenId] == previousPrice, 'must specify current price accurately');
+        uint256 previousPrice,
+        uint256 depositAmount
+    ) public payable collectPatronage(profileId, oldFollowNFTTokenId) {
+        require(
+            price[profileId][oldFollowNFTTokenId] == previousPrice,
+            'must specify current price accurately'
+        );
         require(_newPrice > 0, 'Price is zero');
-        require(msg.value > price[followNFTTokenId], 'Not enough'); // >, coz need to have at least something for deposit
+        require(
+            state[profileId][newFollowNFTTokenId] == FollowState.NormalFollow,
+            'can only upgrade normal token'
+        );
 
-        if (state[followNFTTokenId] == StewardState.Owned) {
-            uint256 totalToPayBack = price[followNFTTokenId];
-            // NOTE: pay back the deposit only if it is the only token the patron owns.
-            if (
-                totalPatronOwnedTokenCost[tokenPatron] ==
-                price[followNFTTokenId].mul(patronageNumerator[followNFTTokenId])
-            ) {
-                totalToPayBack = totalToPayBack.add(deposit[tokenPatron]);
-                deposit[tokenPatron] = 0;
-            }
+        uint256 amountForBuyerToTransfer = (state[profileId][oldFollowNFTTokenId] ==
+            FollowState.SuperFollow)
+            ? price[profileId][oldFollowNFTTokenId] + depositAmount
+            : depositAmount;
 
-            // pay previous owner their price + deposit back.
-            address payable payableCurrentPatron = address(uint160(tokenPatron));
-            (bool transferSuccess, ) = payableCurrentPatron.call.gas(2300).value(totalToPayBack)(
-                ''
+        // Take the users whitelisted tokens.
+        IERC20(whitelistedCollateralUsed[profileId]).transferFrom(
+            msg.sender,
+            address(this),
+            amountForBuyerToTransfer
+        );
+
+        address followNFT = ILensHub(hub).getFollowNFT(profileId);
+
+        address newOwner = IERC721(followNFT).ownerOf(newFollowNFTTokenId);
+        require(newOwner == msg.sender, 'need to be owner to upgrade');
+
+        // Case 1 - it is already a super follow token.
+        if (state[profileId][oldFollowNFTTokenId] == FollowState.SuperFollow) {
+            uint256 totalToPayBack = price[profileId][oldFollowNFTTokenId] +
+                deposit[profileId][oldFollowNFTTokenId];
+
+            deposit[profileId][oldFollowNFTTokenId] = 0;
+            price[profileId][oldFollowNFTTokenId] = 0;
+
+            address paymentRecipient = IERC721(followNFT).ownerOf(oldFollowNFTTokenId);
+            // transfer this back to old user.
+            IERC20(whitelistedCollateralUsed[profileId]).transfer(paymentRecipient, totalToPayBack);
+
+            // correct states
+            state[profileId][oldFollowNFTTokenId] == FollowState.NormalFollow;
+        } else {
+            // Case 2 - it is a normal token.
+            numberOfSuperFollowers[profileId]++;
+            require(
+                numberOfSuperFollowers[profileId] <= maxNumberOfSuperFollowers[profileId],
+                'All super follow spots are claimed.'
             );
-            if (!transferSuccess) {
-                deposit[tokenPatron] = deposit[tokenPatron].add(totalToPayBack);
-            }
-        } else if (state[followNFTTokenId] == StewardState.Foreclosed) {
-            state[followNFTTokenId] = StewardState.Owned;
-            timeLastCollected[followNFTTokenId] = now;
-            timeLastCollectedPatron[msg.sender] = now;
         }
 
-        deposit[msg.sender] = deposit[msg.sender].add(msg.value.sub(price[followNFTTokenId]));
-        transferAssetTokenTo(followNFTTokenId, currentOwner, tokenPatron, msg.sender, _newPrice);
-        emit Buy(followNFTTokenId, msg.sender, _newPrice); */
+        timeLastCollected[profileId][newFollowNFTTokenId] = block.timestamp;
+        deposit[profileId][newFollowNFTTokenId] = depositAmount;
+        state[profileId][newFollowNFTTokenId] == FollowState.SuperFollow;
+
+        // emit Buy(followNFTTokenId, msg.sender, _newPrice);
     }
 }
 
 contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, HarbergerTaxStuff {
     constructor(address hub, uint256 _patronageDenominator)
-        HarbergerTaxStuff(_patronageDenominator)
+        HarbergerTaxStuff(_patronageDenominator, hub)
         ModuleBase(hub)
     {}
 
