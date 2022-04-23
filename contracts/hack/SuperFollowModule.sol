@@ -323,6 +323,8 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
         _acceptedToken = acceptedToken;
 
         cfaV1 = CFAv1Library.InitData(_host, _cfa);
+
+        block.chainid == 80001;
     }
 
     struct InitializerInput {

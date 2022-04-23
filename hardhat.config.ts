@@ -8,6 +8,11 @@ import glob from 'glob';
 import path from 'path';
 dotenv.config({ path: '../.env' });
 
+import {
+  mnemonic,
+  mumbaiProviderUrl,
+} from "./secretsManager.js";
+
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import '@typechain/hardhat';
@@ -70,7 +75,14 @@ const config: HardhatUserConfig = {
     main: getCommonNetworkConfig(eEthereumNetwork.main, 1),
     tenderlyMain: getCommonNetworkConfig(eEthereumNetwork.tenderlyMain, 3030),
     matic: getCommonNetworkConfig(ePolygonNetwork.matic, 137),
-    mumbai: getCommonNetworkConfig(ePolygonNetwork.mumbai, 80001),
+    // mumbai: getCommonNetworkConfig(ePolygonNetwork.mumbai, 80001),
+    mumbai: {
+      chainId: 80001,
+      url: mumbaiProviderUrl || "https://rpc-mumbai.maticvigil.com/v1",
+      accounts: { mnemonic },
+      // gasPrice: 180000000000,
+      // gas: 8000000,
+    },
     xdai: getCommonNetworkConfig(eXDaiNetwork.xdai, 100),
     hardhat: {
       hardfork: 'london',

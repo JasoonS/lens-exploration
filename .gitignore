@@ -28,3 +28,5 @@ addresses.json
 contracts/core/modules/follow/SecretCodeFollowModule.sol
 
 out/
+
+secretsManager.js

@@ -20,7 +20,14 @@ npx hardhat create-profile --network localhost
 npx hardhat follow --network localhost
 ```
 
-npm run full-deploy-eth-amsterdam-demo; npx hardhat unpause --network localhost; npx hardhat create-profile --network localhost; npx hardhat follow --network localhost
+## deploy the full project to Mumbai testnet
+
+```
+npx hardhat full-deploy-demo-mumbai --network mumbai # it deploys quite a few redundant contracts, but that is fine
+npx hardhat unpause --network mumbai
+npx hardhat create-profile --network mumbai
+npx hardhat follow-mumbai --network mumbai
+```
 
 ```
      &&&&&                        &&&&&&&&&&&&&&&&&&&&&&&&     &&&&&&&&&&              &&&&&         /&&&&&&&&&&&&&&&&&
