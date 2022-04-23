@@ -1,14 +1,8 @@
-// SPDX-License-Identifier: AGPL-3.0-only
-
 pragma solidity 0.8.13;
 
-/**
- * @title IFollowModule
- * @author Lens Protocol
- *
- * @notice This is the standard interface for all Lens-compatible FollowModules.
- */
-interface IFollowModule {
+import '../interfaces/IFollowModule.sol';
+
+contract FunkyFollowModule is IFollowModule {
     /**
      * @notice Initializes a follow module for a given Lens profile. This can only be called by the hub contract.
      *
@@ -19,7 +13,10 @@ interface IFollowModule {
      */
     function initializeFollowModule(uint256 profileId, bytes calldata data)
         external
-        returns (bytes memory);
+        returns (bytes memory)
+    {
+        return abi.encode(0);
+    }
 
     /**
      * @notice Processes a given follow, this can only be called from the LensHub contract.
@@ -32,7 +29,7 @@ interface IFollowModule {
         address follower,
         uint256 profileId,
         bytes calldata data
-    ) external;
+    ) external {}
 
     /**
      * @notice This is a transfer hook that is called upon follow NFT transfer in `beforeTokenTransfer. This can
@@ -52,7 +49,7 @@ interface IFollowModule {
         address from,
         address to,
         uint256 followNFTTokenId
-    ) external;
+    ) external {}
 
     /**
      * @notice This is a helper function that could be used in conjunction with specific collect modules.
@@ -80,5 +77,7 @@ interface IFollowModule {
         uint256 profileId,
         address follower,
         uint256 followNFTTokenId
-    ) external view returns (bool);
+    ) external view returns (bool) {
+        return true;
+    }
 }

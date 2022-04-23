@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.13;
 
 import {DataTypes} from '../libraries/DataTypes.sol';
 
@@ -537,5 +537,4 @@ interface ILensHub {
      * @return address The collect NFT implementation address.
      */
     function getCollectNFTImpl() external view returns (address);
-
 }

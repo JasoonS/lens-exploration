@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.13;
 
 import {FollowNFTProxy} from '../upgradeability/FollowNFTProxy.sol';
 import {Helpers} from './Helpers.sol';
@@ -146,12 +146,7 @@ library InteractionLogic {
      *
      * @return address The address of the deployed Follow NFT contract.
      */
-    function _deployFollowNFT(uint256 profileId)
-        private
-        returns (
-            address
-        )
-    {
+    function _deployFollowNFT(uint256 profileId) private returns (address) {
         bytes memory functionData = abi.encodeWithSelector(
             IFollowNFT.initialize.selector,
             profileId

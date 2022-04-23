@@ -71,6 +71,7 @@
     }
   },
   "dependencies": {
+    "@float-capital/ds-test": "^0.0.1",
     "@openzeppelin/contracts": "4.5.0"
   },
   "author": "Lens",

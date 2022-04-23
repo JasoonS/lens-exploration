@@ -42,16 +42,16 @@ const getCommonNetworkConfig = (networkName: eNetwork, networkId: number) => ({
 
 const mainnetFork = MAINNET_FORK
   ? {
-      blockNumber: 12012081,
-      url: NETWORKS_RPC_URL['main'],
-    }
+    blockNumber: 12012081,
+    url: NETWORKS_RPC_URL['main'],
+  }
   : undefined;
 
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.8.10',
+        version: '0.8.13',
         settings: {
           optimizer: {
             enabled: true,

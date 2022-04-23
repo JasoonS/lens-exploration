@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.13;
 
 import {DataTypes} from './DataTypes.sol';
 
@@ -519,9 +519,5 @@ library Events {
      * @param metadata The metadata set for the profile and user.
      * @param timestamp The current block timestamp.
      */
-    event ProfileMetadataSet(
-        uint256 indexed profileId,
-        string metadata,
-        uint256 timestamp
-    );
+    event ProfileMetadataSet(uint256 indexed profileId, string metadata, uint256 timestamp);
 }

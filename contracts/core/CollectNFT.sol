@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.13;
 
 import {ICollectNFT} from '../interfaces/ICollectNFT.sol';
 import {ILensHub} from '../interfaces/ILensHub.sol';

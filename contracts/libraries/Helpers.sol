@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.13;
 
 import {DataTypes} from './DataTypes.sol';
 import {Errors} from './Errors.sol';
@@ -21,7 +21,7 @@ library Helpers {
      * @param pubId The publication ID of the given publication.
      * @param _pubByIdByProfile A pointer to the storage mapping of publications by pubId by profile ID.
      *
-     * @return tuple First, the pointed publication's publishing profile ID, second, the pointed publication's ID, and third, the 
+     * @return tuple First, the pointed publication's publishing profile ID, second, the pointed publication's ID, and third, the
      * pointed publication's collect module. If the passed publication is not a mirror, this returns the given publication.
      */
     function getPointedIfMirror(
