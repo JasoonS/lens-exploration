@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Lenster', Helvetica, Arial, sans-serif;
+  @apply bg-gray-50;
+  @apply dark:bg-black;
+}
+
+.shimmer {
+  @apply animate-pulse;
+  @apply bg-gray-300;
+  @apply dark:bg-gray-600;
+}
+
+.menu-item {
+  @apply block px-4 py-1.5 text-sm text-gray-700 dark:text-gray-200 m-2 rounded-lg cursor-pointer;
+}
+
+.text-brand {
+  @apply text-brand-500 dark:text-brand-400/80;
+}
+
+.linkify a {
+  @apply text-brand;
+  @apply hover:text-brand-600 dark:hover:text-brand-500;
+}
+
+.identicon {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+::-webkit-file-upload-button {
+  @apply px-3 py-2 mr-2 border-0 cursor-pointer rounded-l-xl;
+  @apply bg-gray-200 dark:bg-gray-900;
+}
+
+.bg-hero {
+  background: linear-gradient(90deg, #fff, #fff 50%, hsla(0, 0%, 100%, 0)),
+    url(https://assets.lenster.xyz/images/patterns/hero.png);
+  background-size: cover;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.giphy-gif {
+  @apply !rounded-none;
+}
+
+.page-center {
+  @apply flex justify-center items-center h-[calc(100vh-65px)];
+}
+
+.tippy-content {
+  @apply !px-2.5 !py-0.5;
+}
+
+.label {
+  @apply mb-1 font-medium text-gray-800 dark:text-gray-200;
+}
+
+.mention-input textarea {
+  @apply px-4 w-full bg-white rounded-xl border border-gray-300 shadow-sm dark:bg-gray-800 disabled:bg-gray-500 disabled:bg-opacity-20 disabled:opacity-60 dark:border-gray-700/80 focus:border-brand-500 focus:ring-brand-400;
+}
+
+.mention-input__suggestions {
+  @apply !bg-white dark:!bg-gray-900 !mt-8 !border dark:border-gray-700/80 rounded-xl shadow-sm w-52;
+}
+
+.mention-input__suggestions__list {
+  @apply divide-y dark:divide-gray-700/80;
+}
