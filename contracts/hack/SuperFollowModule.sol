@@ -11,6 +11,11 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import {ILensHub} from '../interfaces/ILensHub.sol';
 import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
+import {ISuperfluid, ISuperToken, ISuperApp} from '@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol';
+
+import {IConstantFlowAgreementV1} from '@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IConstantFlowAgreementV1.sol';
+import {CFAv1Library} from '@superfluid-finance/ethereum-contracts/contracts/apps/CFAv1Library.sol';
+
 import 'hardhat/console.sol';
 
 /*
@@ -23,10 +28,17 @@ import 'hardhat/console.sol';
 contract HarbergerTaxStuff {
     address public hub;
 
+    using CFAv1Library for CFAv1Library.InitData;
+
     constructor(uint256 _patronageDenominator, address _HUB) {
         patronageDenominator = _patronageDenominator;
         hub = _HUB;
     }
+
+    ISuperfluid public _host; // host
+    IConstantFlowAgreementV1 public _cfa; // the stored constant flow agreement class address
+    CFAv1Library.InitData public cfaV1;
+    ISuperToken public _acceptedToken; // accepted token
 
     /*
     This smart contract collects patronage from current owner through a Harberger tax model and 
@@ -75,6 +87,9 @@ contract HarbergerTaxStuff {
     mapping(uint256 => uint256) numberOfSuperFollowers;
 
     mapping(uint256 => address) whitelistedCollateralUsed; // need to initialize.
+
+    mapping(uint256 => int96) totalFlowRate;
+    // mapping(uint256 => bool) streamAlreadyExists;
 
     //////////////// NEW variables in v2///////////////////
     // mapping(uint256 => uint256) public tokenGenerationRate; // we can reuse the patronage denominator
@@ -128,10 +143,26 @@ contract HarbergerTaxStuff {
                 (patronageDenominator)) / (365 days);
     }
 
+    function patronageOwedPerSecond(uint256 profileId, uint256 followNFTTokenId)
+        public
+        view
+        returns (int96 patronageDue)
+    {
+        return
+            int96(
+                int256(((price[profileId][followNFTTokenId]) / (patronageDenominator)) / (365 days))
+            );
+    }
+
     function _foreclose(uint256 profileId, uint256 followNFTTokenId) internal {
         // become steward of assetToken (aka foreclose)
         state[profileId][followNFTTokenId] = FollowState.NormalFollow;
         numberOfSuperFollowers[profileId]--; // decrement number of superfollowers
+
+        totalFlowRate[profileId] -= patronageOwedPerSecond(profileId, followNFTTokenId);
+        int96 internalRecordedFlowRate = totalFlowRate[profileId];
+
+        cfaV1.updateFlow(beneficiary[profileId], _acceptedToken, internalRecordedFlowRate);
 
         // send the token anywhere?
         // emit Foreclosure(currentOwner, timeLastCollected[followNFTTokenId]);
@@ -207,6 +238,8 @@ contract HarbergerTaxStuff {
             'can only upgrade normal token'
         );
 
+        int96 patronagePerSecondBefore = patronageOwedPerSecond(profileId, oldFollowNFTTokenId);
+
         uint256 amountForBuyerToTransfer = (state[profileId][oldFollowNFTTokenId] ==
             FollowState.SuperFollow)
             ? price[profileId][oldFollowNFTTokenId] + depositAmount
@@ -256,14 +289,41 @@ contract HarbergerTaxStuff {
 
         // console.log(state[profileId][newFollowNFTTokenId] == FollowState.SuperFollow);
         // emit Buy(followNFTTokenId, msg.sender, _newPrice);
+
+        totalFlowRate[profileId] += (patronageOwedPerSecond(profileId, newFollowNFTTokenId) -
+            patronagePerSecondBefore);
+        int96 internalRecordedFlowRate = totalFlowRate[profileId];
+        (, int96 currentFlowRate, , ) = _cfa.getFlow(
+            _acceptedToken,
+            address(this),
+            beneficiary[profileId]
+        );
+        if (currentFlowRate > 0) {
+            cfaV1.updateFlow(beneficiary[profileId], _acceptedToken, internalRecordedFlowRate);
+        } else {
+            cfaV1.createFlow(beneficiary[profileId], _acceptedToken, internalRecordedFlowRate);
+        }
     }
 }
 
 contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, HarbergerTaxStuff {
-    constructor(address hub, uint256 _patronageDenominator)
-        HarbergerTaxStuff(_patronageDenominator, hub)
-        ModuleBase(hub)
-    {}
+    constructor(
+        address hub,
+        uint256 _patronageDenominator,
+        ISuperfluid host,
+        IConstantFlowAgreementV1 cfa,
+        ISuperToken acceptedToken
+    ) HarbergerTaxStuff(_patronageDenominator, hub) ModuleBase(hub) {
+        assert(address(_host) != address(0));
+        assert(address(_cfa) != address(0));
+        assert(address(_acceptedToken) != address(0));
+
+        _host = host;
+        _cfa = cfa;
+        _acceptedToken = acceptedToken;
+
+        cfaV1 = CFAv1Library.InitData(_host, _cfa);
+    }
 
     struct InitializerInput {
         uint256 numberOfSuperFollowers;
@@ -300,6 +360,11 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
             inputData.patronageNumerator >= (patronageDenominator / 100) && /* 1% anually */
                 inputData.patronageNumerator <= (patronageDenominator * 10), /* 1000% anually */
             'patronageNumerator not in range'
+        );
+
+        require(
+            inputData.erc20PaymentTokenAddress == address(_acceptedToken),
+            'currently only supports once payment token'
         );
 
         maxNumberOfSuperFollowers[profileId] = inputData.numberOfSuperFollowers;

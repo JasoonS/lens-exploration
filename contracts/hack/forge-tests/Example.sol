@@ -12,16 +12,14 @@ contract ExampleTest is DSTest {
     uint256 constant profileId = 123;
 
     function setUp() public {
-        followModule = new SuperFollowModule(address(5), patronageDenominator);
-
-        SuperFollowModule.InitializerInput memory initializerInput = SuperFollowModule
-            .InitializerInput(
-                20,
-                patronageDenominator / 10, /* 10% anually */
-                address(20000)
-            );
-
-        followModule.initializeFollowModule(profileId, abi.encode(initializerInput));
+        // followModule = new SuperFollowModule(address(5), patronageDenominator);
+        // SuperFollowModule.InitializerInput memory initializerInput = SuperFollowModule
+        //     .InitializerInput(
+        //         20,
+        //         patronageDenominator / 10, /* 10% anually */
+        //         address(20000)
+        //     );
+        // followModule.initializeFollowModule(profileId, abi.encode(initializerInput));
     }
 
     function basicFlow() public {
