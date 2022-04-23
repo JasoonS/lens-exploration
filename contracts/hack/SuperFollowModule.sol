@@ -33,12 +33,16 @@ contract HarbergerTaxStuff {
     constructor(uint256 _patronageDenominator, address _HUB) {
         patronageDenominator = _patronageDenominator;
         hub = _HUB;
+        NOT_LOCALHOST_IS_MUMBAI = block.chainid == 80001;
+        // NOT_LOCALHOST_IS_MUMBAI = true;
     }
 
     ISuperfluid public _host; // host
     IConstantFlowAgreementV1 public _cfa; // the stored constant flow agreement class address
     CFAv1Library.InitData public cfaV1;
     ISuperToken public _acceptedToken; // accepted token
+
+    bool private immutable NOT_LOCALHOST_IS_MUMBAI;
 
     /*
     This smart contract collects patronage from current owner through a Harberger tax model and 
@@ -137,7 +141,6 @@ contract HarbergerTaxStuff {
         returns (uint256 patronageDue)
     {
         uint256 tokenTimeLastCollected = timeLastCollected[profileId][followNFTTokenId];
-        console.log('time last collected', tokenTimeLastCollected);
         if (tokenTimeLastCollected == 0) return 0;
 
         return
@@ -162,10 +165,11 @@ contract HarbergerTaxStuff {
         numberOfSuperFollowers[profileId]--; // decrement number of superfollowers
 
         totalFlowRate[profileId] -= patronageOwedPerSecond(profileId, followNFTTokenId);
-        int96 internalRecordedFlowRate = totalFlowRate[profileId];
+        if (NOT_LOCALHOST_IS_MUMBAI) {
+            int96 internalRecordedFlowRate = totalFlowRate[profileId];
 
-        cfaV1.updateFlow(beneficiary[profileId], _acceptedToken, internalRecordedFlowRate);
-
+            cfaV1.updateFlow(beneficiary[profileId], _acceptedToken, internalRecordedFlowRate);
+        }
         // send the token anywhere?
         // emit Foreclosure(currentOwner, timeLastCollected[followNFTTokenId]);
     }
@@ -240,7 +244,7 @@ contract HarbergerTaxStuff {
             'can only upgrade normal token'
         );
 
-        int96 patronagePerSecondBefore = patronageOwedPerSecond(profileId, oldFollowNFTTokenId);
+        totalFlowRate[profileId] -= patronageOwedPerSecond(profileId, newFollowNFTTokenId);
 
         uint256 amountForBuyerToTransfer = (state[profileId][oldFollowNFTTokenId] ==
             FollowState.SuperFollow)
@@ -254,10 +258,11 @@ contract HarbergerTaxStuff {
             amountForBuyerToTransfer
         );
 
-        address followNFT = ILensHub(hub).getFollowNFT(profileId);
-
-        address newOwner = IERC721(followNFT).ownerOf(newFollowNFTTokenId);
-        require(newOwner == msg.sender, 'need to be owner to upgrade');
+        require(
+            IERC721(ILensHub(hub).getFollowNFT(profileId)).ownerOf(newFollowNFTTokenId) ==
+                msg.sender,
+            'need to be owner to upgrade'
+        );
 
         // Case 1 - it is already a super follow token.
         if (state[profileId][oldFollowNFTTokenId] == FollowState.SuperFollow) {
@@ -267,9 +272,11 @@ contract HarbergerTaxStuff {
             deposit[profileId][oldFollowNFTTokenId] = 0;
             price[profileId][oldFollowNFTTokenId] = 0;
 
-            address paymentRecipient = IERC721(followNFT).ownerOf(oldFollowNFTTokenId);
             // transfer this back to old user.
-            IERC20(whitelistedCollateralUsed[profileId]).transfer(paymentRecipient, totalToPayBack);
+            IERC20(whitelistedCollateralUsed[profileId]).transfer(
+                IERC721(ILensHub(hub).getFollowNFT(profileId)).ownerOf(oldFollowNFTTokenId),
+                totalToPayBack
+            );
 
             // correct states
             state[profileId][oldFollowNFTTokenId] == FollowState.NormalFollow;
@@ -287,23 +294,20 @@ contract HarbergerTaxStuff {
         state[profileId][newFollowNFTTokenId] = FollowState.SuperFollow;
         price[profileId][newFollowNFTTokenId] = _newPrice;
 
-        console.log(price[profileId][newFollowNFTTokenId]);
-
-        // console.log(state[profileId][newFollowNFTTokenId] == FollowState.SuperFollow);
         // emit Buy(followNFTTokenId, msg.sender, _newPrice);
 
-        totalFlowRate[profileId] += (patronageOwedPerSecond(profileId, newFollowNFTTokenId) -
-            patronagePerSecondBefore);
-        int96 internalRecordedFlowRate = totalFlowRate[profileId];
+        totalFlowRate[profileId] += patronageOwedPerSecond(profileId, newFollowNFTTokenId);
         (, int96 currentFlowRate, , ) = _cfa.getFlow(
             _acceptedToken,
             address(this),
             beneficiary[profileId]
         );
-        if (currentFlowRate > 0) {
-            cfaV1.updateFlow(beneficiary[profileId], _acceptedToken, internalRecordedFlowRate);
-        } else {
-            cfaV1.createFlow(beneficiary[profileId], _acceptedToken, internalRecordedFlowRate);
+        if (NOT_LOCALHOST_IS_MUMBAI) {
+            if (currentFlowRate > 0) {
+                cfaV1.updateFlow(beneficiary[profileId], _acceptedToken, totalFlowRate[profileId]);
+            } else {
+                cfaV1.createFlow(beneficiary[profileId], _acceptedToken, totalFlowRate[profileId]);
+            }
         }
     }
 }
@@ -312,8 +316,8 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
     constructor(
         address hub,
         uint256 _patronageDenominator,
-        ISuperfluid host,
-        IConstantFlowAgreementV1 cfa,
+        ISuperfluid host, // 0xEB796bdb90fFA0f28255275e16936D25d3418603
+        IConstantFlowAgreementV1 cfa, // 0x49e565Ed1bdc17F3d220f72DF0857C26FA83F873
         ISuperToken acceptedToken
     ) HarbergerTaxStuff(_patronageDenominator, hub) ModuleBase(hub) {
         assert(address(_host) != address(0));
@@ -323,27 +327,29 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
         _host = host;
         _cfa = cfa;
         _acceptedToken = acceptedToken;
-
-        cfaV1 = CFAv1Library.InitData(_host, _cfa);
-
-        block.chainid == 80001;
+        if (block.chainid == 80001) {
+            cfaV1 = CFAv1Library.InitData(_host, _cfa);
+        }
     }
 
     struct InitializerInput {
         uint256 numberOfSuperFollowers;
         uint256 patronageNumerator;
         address erc20PaymentTokenAddress;
+        address beneficiary;
     }
 
     function hackToEncodeValueAsBytes(
         uint256 numberOfSuperFollowers,
         uint256 patronageNumerator,
-        address erc20PaymentTokenAddress
+        address erc20PaymentTokenAddress,
+        address beneficiary
     ) public pure returns (bytes memory) {
         InitializerInput memory initializerInput = InitializerInput(
             numberOfSuperFollowers,
             patronageNumerator,
-            erc20PaymentTokenAddress
+            erc20PaymentTokenAddress,
+            beneficiary
         );
 
         return abi.encode(initializerInput);
@@ -374,6 +380,7 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
         maxNumberOfSuperFollowers[profileId] = inputData.numberOfSuperFollowers;
         patronageNumerator[profileId] = inputData.patronageNumerator;
         whitelistedCollateralUsed[profileId] = inputData.erc20PaymentTokenAddress;
+        beneficiary[profileId] = inputData.beneficiary;
 
         return abi.encode(0);
     }
@@ -402,7 +409,6 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
     ) external view returns (bool) {
         // TODO: Check that the address owns the followNFTTokenId.
         bool isSuperFollow = state[profileId][followNFTTokenId] == FollowState.SuperFollow;
-        console.log('isSuperFollow', isSuperFollow);
 
         if (state[profileId][followNFTTokenId] == FollowState.SuperFollow) {
             if (patronageOwed(profileId, followNFTTokenId) < deposit[profileId][followNFTTokenId]) {
