@@ -40,6 +40,7 @@ task('follow', 'follows a profile').setAction(async ({ }, hre) => {
   await currency.mint(user2.address, thousandUnits);
 
   await currency.increaseAllowance(superFollowModule.address, thousandUnits)
+  await currency.connect(user).increaseAllowance(superFollowModule.address, thousandUnits)
 
   let isSuperFollowingUser1;
   let isSuperFollowingUser2;

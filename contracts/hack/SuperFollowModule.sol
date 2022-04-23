@@ -120,6 +120,7 @@ contract HarbergerTaxStuff {
         returns (uint256 patronageDue)
     {
         uint256 tokenTimeLastCollected = timeLastCollected[profileId][followNFTTokenId];
+        console.log('time last collected', tokenTimeLastCollected);
         if (tokenTimeLastCollected == 0) return 0;
 
         return
@@ -248,8 +249,12 @@ contract HarbergerTaxStuff {
 
         timeLastCollected[profileId][newFollowNFTTokenId] = block.timestamp;
         deposit[profileId][newFollowNFTTokenId] = depositAmount;
-        state[profileId][newFollowNFTTokenId] == FollowState.SuperFollow;
+        state[profileId][newFollowNFTTokenId] = FollowState.SuperFollow;
+        price[profileId][newFollowNFTTokenId] = _newPrice;
 
+        console.log(price[profileId][newFollowNFTTokenId]);
+
+        // console.log(state[profileId][newFollowNFTTokenId] == FollowState.SuperFollow);
         // emit Buy(followNFTTokenId, msg.sender, _newPrice);
     }
 }
@@ -325,6 +330,9 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
         uint256 followNFTTokenId
     ) external view returns (bool) {
         // TODO: Check that the address owns the followNFTTokenId.
+        bool isSuperFollow = state[profileId][followNFTTokenId] == FollowState.SuperFollow;
+        console.log('isSuperFollow', isSuperFollow);
+
         if (state[profileId][followNFTTokenId] == FollowState.SuperFollow) {
             if (patronageOwed(profileId, followNFTTokenId) < deposit[profileId][followNFTTokenId]) {
                 return true;

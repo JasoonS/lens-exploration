@@ -9,6 +9,7 @@ contract ExampleTest is DSTest {
     SuperFollowModule followModule;
 
     uint256 constant patronageDenominator = 1000000000000;
+    uint256 constant profileId = 123;
 
     function setUp() public {
         followModule = new SuperFollowModule(address(5), patronageDenominator);
@@ -20,10 +21,11 @@ contract ExampleTest is DSTest {
                 address(20000)
             );
 
-        followModule.initializeFollowModule(321, abi.encode(initializerInput));
+        followModule.initializeFollowModule(profileId, abi.encode(initializerInput));
     }
 
-    function testExample() public {
+    function basicFlow() public {
+        // followModule.
         assertTrue(true);
     }
 }
