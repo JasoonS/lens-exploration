@@ -74,8 +74,12 @@ export async function initEnv(hre: HardhatRuntimeEnvironment): Promise<SignerWit
   const governance = accounts[1];
   const treasury = accounts[2];
   const user = accounts[3];
+  const user2 = accounts[4];
+  const user3 = accounts[5];
+  const user4 = accounts[6];
+  const user5 = accounts[7];
 
-  return [governance, treasury, user];
+  return [governance, treasury, user, user2, user3, user4, user5];
 }
 
 async function delay(ms: number) {

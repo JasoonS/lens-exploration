@@ -11,6 +11,8 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import {ILensHub} from '../interfaces/ILensHub.sol';
 import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
+import 'hardhat/console.sol';
+
 /*
 // NOTE:
    -- This contract has some role access holes, hackathon vibes.
@@ -263,11 +265,31 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
         uint256 patronageNumerator;
     }
 
+    function hackToEncodeValueAsBytes(uint256 numberOfSuperFollowers, uint256 patronageNumerator)
+        public
+        pure
+        returns (bytes memory)
+    {
+        InitializerInput memory initializerInput = InitializerInput(
+            numberOfSuperFollowers,
+            patronageNumerator
+        );
+
+        return abi.encode(initializerInput);
+    }
+
     function initializeFollowModule(uint256 profileId, bytes calldata data)
         external
         returns (bytes memory)
     {
         InitializerInput memory inputData = abi.decode(data, (InitializerInput));
+        console.log('THE VALUES');
+        console.log('THE VALUES');
+        console.log('THE VALUES');
+        console.log('THE VALUES');
+        console.log('THE VALUES');
+        console.log(inputData.numberOfSuperFollowers);
+        console.log(inputData.patronageNumerator);
 
         // TODO: do some more data validation on the input data.
         require(
