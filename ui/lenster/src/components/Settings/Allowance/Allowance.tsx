@@ -1,0 +1,23 @@
+import { CardBody } from '@components/UI/Card'
+import { ApprovedAllowanceAmount } from '@generated/types'
+import React, { FC } from 'react'
+
+import Module from './Module'
+
+interface Props {
+  allowance: any
+}
+
+const Allowance: FC<Props> = ({ allowance }) => {
+  return (
+    <CardBody className="space-y-4">
+      {allowance?.approvedModuleAllowanceAmount?.map(
+        (item: ApprovedAllowanceAmount) => (
+          <Module key={item?.contractAddress} module={item} />
+        )
+      )}
+    </CardBody>
+  )
+}
+
+export default Allowance

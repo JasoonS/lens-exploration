@@ -83,10 +83,12 @@ contract HarbergerTaxStuff {
     address public admin;
 
     // profileId => max number of super followers
-    mapping(uint256 => uint256) maxNumberOfSuperFollowers; // need to set in constructor!!
-    mapping(uint256 => uint256) numberOfSuperFollowers;
+    mapping(uint256 => uint256) public maxNumberOfSuperFollowers; // need to set in constructor!!
+    mapping(uint256 => uint256) public numberOfSuperFollowers;
 
-    mapping(uint256 => address) whitelistedCollateralUsed; // need to initialize.
+    mapping(uint256 => address) public whitelistedCollateralUsed; // need to initialize.
+
+    mapping(address => uint256) public addressToNFT;
 
     mapping(uint256 => int96) totalFlowRate;
     // mapping(uint256 => bool) streamAlreadyExists;
@@ -389,6 +391,8 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
         uint256 followNFTTokenId
     ) external {
         // does nothing
+        addressToNFT[from] = 0;
+        addressToNFT[to] = followNFTTokenId;
     }
 
     function isSuperFollower(
