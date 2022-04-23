@@ -283,13 +283,6 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
         returns (bytes memory)
     {
         InitializerInput memory inputData = abi.decode(data, (InitializerInput));
-        console.log('THE VALUES');
-        console.log('THE VALUES');
-        console.log('THE VALUES');
-        console.log('THE VALUES');
-        console.log('THE VALUES');
-        console.log(inputData.numberOfSuperFollowers);
-        console.log(inputData.patronageNumerator);
 
         // TODO: do some more data validation on the input data.
         require(
