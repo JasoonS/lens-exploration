@@ -8,10 +8,18 @@ import '../SuperFollowModule.sol';
 contract ExampleTest is DSTest {
     SuperFollowModule followModule;
 
-    function setUp() public {
-        followModule = new SuperFollowModule(address(5));
+    uint256 constant patronageDenominator = 1000000000000;
 
-        // followModule.initializeFollowModule(321, abi.encode(22));
+    function setUp() public {
+        followModule = new SuperFollowModule(address(5), patronageDenominator);
+
+        SuperFollowModule.InitializerInput memory initializerInput = SuperFollowModule
+            .InitializerInput(
+                20,
+                patronageDenominator / 10 /* 10% anually */
+            );
+
+        followModule.initializeFollowModule(321, abi.encode(initializerInput));
     }
 
     function testExample() public {

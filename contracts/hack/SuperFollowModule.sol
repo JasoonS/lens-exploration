@@ -7,11 +7,18 @@ import {IFollowModule} from '../interfaces/IFollowModule.sol';
 import {ModuleBase} from '../core/modules/ModuleBase.sol';
 import {FollowValidatorFollowModuleBase} from '../core/modules/follow/FollowValidatorFollowModuleBase.sol';
 
-contract MintManager {
-    // Might not use this contract - intention is to manage payout of erc20 tokens.
-}
+/*
+// NOTE:
+   -- This contract has some role access holes, hackathon vibes.
 
+// TODO:
+   -- Add more customization, and admin roles to edit configuration.
+*/
 contract HarbergerTaxStuff {
+    constructor(uint256 _patronageDenominator) {
+        patronageDenominator = _patronageDenominator;
+    }
+
     /*
     This smart contract collects patronage from current owner through a Harberger tax model and 
     takes stewardship of the asset token if the patron can't pay anymore.
@@ -223,7 +230,10 @@ contract HarbergerTaxStuff {
 }
 
 contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, HarbergerTaxStuff {
-    constructor(address hub) ModuleBase(hub) {}
+    constructor(address hub, uint256 _patronageDenominator)
+        HarbergerTaxStuff(_patronageDenominator)
+        ModuleBase(hub)
+    {}
 
     struct InitializerInput {
         uint256 numberOfSuperFollowers;
