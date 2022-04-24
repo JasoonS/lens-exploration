@@ -297,7 +297,7 @@ contract HarbergerTaxStuff {
         state[profileId][newFollowNFTTokenId] = FollowState.SuperFollow;
         price[profileId][newFollowNFTTokenId] = _newPrice;
 
-        // emit Buy(followNFTTokenId, msg.sender, _newPrice);
+        emit Buy(newFollowNFTTokenId, msg.sender, _newPrice);
 
         totalFlowRate[profileId] += patronageOwedPerSecond(profileId, newFollowNFTTokenId);
         (, int96 currentFlowRate, , ) = _cfa.getFlow(

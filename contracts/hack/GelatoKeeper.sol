@@ -20,6 +20,7 @@ contract GelatoKeeper {
     // https://docs.gelato.network/guides/writing-a-resolver/smart-contract-resolver
     function shouldForecloseSuperFollower(uint256 profileId, uint256 tokenIDStart)
         external
+        view
         returns (bool canExec, bytes memory execPayload)
     {
         // Loop through the 10 golden circle members and ensure they are not foreclosed.
@@ -27,7 +28,7 @@ contract GelatoKeeper {
             // Ensure they are a super follower
             address moduleAddress = ILensHub(hub).getFollowModule(profileId);
             canExec =
-                SuperFollowModule(moduleAddress).patronageOwed(profileId, tokenIDStart) <
+                SuperFollowModule(moduleAddress).patronageOwed(profileId, tokenIDStart) >=
                 SuperFollowModule(moduleAddress).deposit(profileId, tokenIDStart);
 
             execPayload = abi.encodeWithSelector(

@@ -25,6 +25,7 @@ import {
   UIDataProvider__factory,
   ProfileFollowModule__factory,
   SuperFollowModule__factory,
+  GelatoKeeper__factory,
 } from '../../typechain-types';
 import { deployContract, waitForTx } from '../helpers/utils';
 import { paymentToken } from "./CONSTANTS.js";
@@ -215,6 +216,12 @@ task('full-deploy-demo-mumbai', 'deploys the entire Lens Protocol').setAction(as
     })
   );
 
+  const gelatoKeeper = await deployContract(
+    new GelatoKeeper__factory(deployer).deploy(lensHub.address, {
+      nonce: deployerNonce++,
+    })
+  );
+
   // Whitelist the collect modules
   console.log('\n\t-- Whitelisting Collect Modules --');
   let governanceNonce = await ethers.provider.getTransactionCount(governance.address);
@@ -299,6 +306,7 @@ task('full-deploy-demo-mumbai', 'deploys the entire Lens Protocol').setAction(as
     // 'approval follow module': approvalFollowModule.address,
     'follower only reference module': followerOnlyReferenceModule.address,
     'UI data provider': uiDataProvider.address,
+    gelatoKeeper: gelatoKeeper.address
   };
   const json = JSON.stringify(addrs, null, 2);
   console.log(json);
