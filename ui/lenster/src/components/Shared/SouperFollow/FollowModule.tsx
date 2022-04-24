@@ -118,11 +118,11 @@ const GoldenCircleButton: FC<GoldenCircleButtonProps> = ({}) => {
   */
   let tokenIdSame = '1'
   let profileId = '1'
-  let oldFollowNFTTokenId = tokenIdSame
-  let newFollowNFTTokenId = tokenIdSame
-  let newPrice = '100'
-  let previousPrice = '0'
-  let depositAmount = '1000000000000000'
+  let oldFollowNFTTokenId = '2' // prev 1
+  let newFollowNFTTokenId = '3' // prev 2
+  let newPrice = '120'
+  let previousPrice = '110' // this is right for next demo
+  let depositAmount = '10000000000000000'
   const { isLoading: writeLoading, write } = useContractWrite(
     {
       addressOrName: '0xDe97f683aB64aAFBbb060F1822b6A8feB8140D1C',
