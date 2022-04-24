@@ -158,7 +158,7 @@ const Details: FC<Props> = ({ profile }) => {
             </div>
           ) : (
             <div>
-              <Follow profile={profile} setFollowing={setFollowing} showText />
+              {/* <Follow profile={profile} setFollowing={setFollowing} showText /> */}
               <GoldenCircleFollow
                 profile={profile}
                 setFollowing={setFollowing}

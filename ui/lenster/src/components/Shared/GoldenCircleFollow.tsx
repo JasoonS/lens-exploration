@@ -1,4 +1,5 @@
 import LensHubProxy from '@abis/LensHubProxy.json'
+import LensHub from '@abis/LensHub.json'
 import { gql, useMutation } from '@apollo/client'
 import { Button } from '@components/UI/Button'
 import { Spinner } from '@components/UI/Spinner'
@@ -69,12 +70,12 @@ const Follow: FC<Props> = ({ profile, showText = false, setFollowing }) => {
   })
   const { isLoading: writeLoading, write } = useContractWrite(
     {
-      addressOrName: '0x023D78C83bfd24cab5b07E11e14a0333eF4CbD4f',
-      contractInterface: LensHubProxy
+      addressOrName: '0x9a114d575D88eB934C817A3fD8367751AaEaAA66',
+      contractInterface: LensHub
     },
-    'followWithSig',
+    'follow',
     {
-      // args: [[1], [[]]],
+      args: [[1], [[]]],
       onSuccess() {
         setFollowing(true)
         toast.success('Followed successfully!')
@@ -117,7 +118,6 @@ const Follow: FC<Props> = ({ profile, showText = false, setFollowing }) => {
         //   }
         //   write({ args: inputStruct })
         // })
-        write()
       },
       onError(error) {
         toast.error(error.message ?? ERROR_MESSAGE)
@@ -131,11 +131,12 @@ const Follow: FC<Props> = ({ profile, showText = false, setFollowing }) => {
     } else if (activeChain?.id !== CHAIN_ID) {
       toast.error(WRONG_NETWORK)
     } else {
-      createFollowTypedData({
-        variables: {
-          request: { follow: { profile: profile?.id } }
-        }
-      })
+      write()
+      // createFollowTypedData({
+      //   variables: {
+      //     request: { follow: { profile: profile?.id } }
+      //   }
+      // })
     }
   }
 

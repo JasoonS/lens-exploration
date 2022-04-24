@@ -116,15 +116,16 @@ const GoldenCircleButton: FC<GoldenCircleButtonProps> = ({}) => {
         uint256 previousPrice,
         uint256 depositAmount
   */
+  let tokenIdSame = '1'
   let profileId = '1'
-  let oldFollowNFTTokenId = '1'
-  let newFollowNFTTokenId = '1'
+  let oldFollowNFTTokenId = tokenIdSame
+  let newFollowNFTTokenId = tokenIdSame
   let newPrice = '100'
   let previousPrice = '0'
-  let depositAmount = '100'
+  let depositAmount = '1000000000000000'
   const { isLoading: writeLoading, write } = useContractWrite(
     {
-      addressOrName: '0x9c4c4eC891c25ad8Bde957952D1285f16417725A',
+      addressOrName: '0xDe97f683aB64aAFBbb060F1822b6A8feB8140D1C',
       contractInterface: SuperFollowModuleAbi
     },
     'upgradeToSuperFollower',
@@ -188,7 +189,7 @@ const CustomApproveButton: FC<CustomApproveProps> = ({ setApproved }) => {
   const { activeChain } = useNetwork()
   const { data: account } = useAccount()
 
-  let spender = '0x9c4c4eC891c25ad8Bde957952D1285f16417725A' // hackathon TODO: be careful of possible redeployment
+  let spender = '0xDe97f683aB64aAFBbb060F1822b6A8feB8140D1C' // hackathon TODO: be careful of possible redeployment
   let amount = '999999999999999999999999'
 
   const { isLoading: writeLoading, write } = useContractWrite(

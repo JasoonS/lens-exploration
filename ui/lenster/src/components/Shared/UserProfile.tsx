@@ -76,7 +76,7 @@ const UserProfile: FC<Props> = ({
           </div>
         ) : (
           <div>
-            <Follow profile={profile} setFollowing={setFollowing} />
+            {/* <Follow profile={profile} setFollowing={setFollowing} /> */}
             <GoldenCircleFollow profile={profile} setFollowing={setFollowing} />
             <SouperFollow profile={profile} setFollowing={setFollowing} />
           </div>
