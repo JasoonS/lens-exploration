@@ -6,20 +6,20 @@ import { CreateProfileDataStruct } from '../../typechain-types/LensHub';
 import { waitForTx, initEnv, getAddrs, ZERO_ADDRESS } from '../helpers/utils';
 
 task('create-profile', 'creates a profile').setAction(async ({ }, hre) => {
-  const [governance, profileOwner] = await initEnv(hre);
+  const [governance, profileOwner, , , user3] = await initEnv(hre);
   const addrs = getAddrs();
   const lensHub = LensHub__factory.connect(addrs['lensHub proxy'], governance);
   const superFollowModuleAddr = addrs['superFollow'];
   const currencyAddress = addrs.currency;
   const superFollowModule = SuperFollowModule__factory.connect(superFollowModuleAddr, governance);
 
-  const followModuleInitData = await superFollowModule.hackToEncodeValueAsBytes(1, "100000000000", currencyAddress);
+  const followModuleInitData = await superFollowModule.hackToEncodeValueAsBytes(1, "1200000000000", currencyAddress, user3.address);
 
   await waitForTx(lensHub.whitelistProfileCreator(profileOwner.address, true));
 
   const inputStruct: CreateProfileDataStruct = {
     to: profileOwner.address,
-    handle: 'floatcapital',
+    handle: 'elonmusk',
     imageURI:
       'https://ipfs.fleek.co/ipfs/Qmc7xwadkq4XaSuwYz1CHeJgqiHdmcU3LqzQ5XshsC6LG1',
     followModule: superFollowModuleAddr,
@@ -31,7 +31,7 @@ task('create-profile', 'creates a profile').setAction(async ({ }, hre) => {
   await waitForTx(lensHub.connect(profileOwner).createProfile(inputStruct));
 
   console.log(`Total supply (should be 1): ${await lensHub.totalSupply()}`);
-  const profileId = await lensHub.getProfileIdByHandle('floatcapital');
+  const profileId = await lensHub.getProfileIdByHandle('elonmusk');
   console.log(
     `Profile owner: ${await lensHub.ownerOf(profileId)}, user address (should be the same): ${profileOwner.address}`
   );

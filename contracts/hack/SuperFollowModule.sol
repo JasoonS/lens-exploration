@@ -30,11 +30,14 @@ contract HarbergerTaxStuff {
 
     using CFAv1Library for CFAv1Library.InitData;
 
-    constructor(uint256 _patronageDenominator, address _HUB) {
+    constructor(
+        uint256 _patronageDenominator,
+        address _HUB,
+        bool isMainnetDeployment
+    ) {
         patronageDenominator = _patronageDenominator;
         hub = _HUB;
-        NOT_LOCALHOST_IS_MUMBAI = block.chainid == 80001;
-        // NOT_LOCALHOST_IS_MUMBAI = true;
+        NOT_LOCALHOST_IS_MUMBAI = isMainnetDeployment;
     }
 
     ISuperfluid public _host; // host
@@ -318,16 +321,18 @@ contract SuperFollowModule is IFollowModule, FollowValidatorFollowModuleBase, Ha
         uint256 _patronageDenominator,
         ISuperfluid host, // 0xEB796bdb90fFA0f28255275e16936D25d3418603
         IConstantFlowAgreementV1 cfa, // 0x49e565Ed1bdc17F3d220f72DF0857C26FA83F873
-        ISuperToken acceptedToken
-    ) HarbergerTaxStuff(_patronageDenominator, hub) ModuleBase(hub) {
-        assert(address(_host) != address(0));
-        assert(address(_cfa) != address(0));
-        assert(address(_acceptedToken) != address(0));
+        ISuperToken acceptedToken,
+        bool isMainnetDeployment
+    ) HarbergerTaxStuff(_patronageDenominator, hub, isMainnetDeployment) ModuleBase(hub) {
+        require(address(_host) == address(0), 'host zero');
+        require(address(_cfa) == address(0), 'cfa zero');
+        require(address(_acceptedToken) == address(0), 'token zero');
 
         _host = host;
         _cfa = cfa;
         _acceptedToken = acceptedToken;
-        if (block.chainid == 80001) {
+
+        if (isMainnetDeployment) {
             cfaV1 = CFAv1Library.InitData(_host, _cfa);
         }
     }

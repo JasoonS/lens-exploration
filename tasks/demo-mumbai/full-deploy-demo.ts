@@ -200,7 +200,9 @@ task('full-deploy-demo-mumbai', 'deploys the entire Lens Protocol').setAction(as
   // Deploy reference module
   console.log('\n\t-- Deploying followerOnlyReferenceModule --');
   const superFollowModule = await deployContract(
-    new SuperFollowModule__factory(deployer).deploy(lensHub.address, ethers.BigNumber.from("1000000000000"), {
+    new SuperFollowModule__factory(deployer).deploy(lensHub.address, ethers.BigNumber.from("1000000000000"), "0xEB796bdb90fFA0f28255275e16936D25d3418603",
+      "0x49e565Ed1bdc17F3d220f72DF0857C26FA83F873",
+      paymentToken, true, {
       nonce: deployerNonce++,
     })
   );

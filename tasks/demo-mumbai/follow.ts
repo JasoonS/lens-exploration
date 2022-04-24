@@ -6,7 +6,7 @@ task('follow-mumbai', 'follows a profile').setAction(async ({ }, hre) => {
   const [, , user, user2] = await initEnv(hre);
   const addrs = getAddrs();
   const lensHub = LensHub__factory.connect(addrs['lensHub proxy'], user);
-  const profileId = await lensHub.getProfileIdByHandle('floatcapital');
+  const profileId = await lensHub.getProfileIdByHandle('elonmusk');
   console.log("user address:", user.address, user2.address);
 
   await waitForTx(lensHub.follow([profileId], [[]]));
@@ -32,35 +32,39 @@ task('follow-mumbai', 'follows a profile').setAction(async ({ }, hre) => {
     `Follow NFT owner of ID 2: ${ownerOf2}, user address (should be the same): ${user2.address}`
   );
 
-  //   const currencyAddress = addrs.currency;
-  //   const currency = Currency__factory.connect(currencyAddress, user2);
-  //   const thousandUnits = "1000000000000000000000" /* 1000 units */;
-  //   const twentyUnits = "20000000000000000000" /* 1000 units */;
-  //   const thirtyUnits = "30000000000000000000" /* 1000 units */;
-  //   await currency.mint(user.address, thousandUnits);
-  //   await currency.mint(user2.address, thousandUnits);
+  const currencyAddress = addrs.currency;
+  const currency = Currency__factory.connect(currencyAddress, user2);
+  const thousandUnits = "1000000000000000000000" /* 1000 units */;
+  const twoUnits = "2000000000000000000" /* 1000 units */;
+  const threeUnits = "3000000000000000000" /* 1000 units */;
+  // const twentyUnits = "20000000000000000000" /* 1000 units */;
+  // const thirtyUnits = "30000000000000000000" /* 1000 units */;
+  // await currency.mint(user.address, thousandUnits);
+  // await currency.mint(user2.address, thousandUnits);
 
-  //   await currency.increaseAllowance(superFollowModule.address, thousandUnits)
-  //   await currency.connect(user).increaseAllowance(superFollowModule.address, thousandUnits)
+  await currency.increaseAllowance(superFollowModule.address, thousandUnits)
+  await currency.connect(user).increaseAllowance(superFollowModule.address, thousandUnits)
 
-  //   let isSuperFollowingUser1;
-  //   let isSuperFollowingUser2;
-  //   isSuperFollowingUser1 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 1);
-  //   isSuperFollowingUser2 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 2);
-  //   console.log(`User 1 is a super follower: ${isSuperFollowingUser1}
-  // User 2 is a super follower: ${isSuperFollowingUser2}`);
-  //   console.log("User 2 becomes super follower")
+  let isSuperFollowingUser1;
+  let isSuperFollowingUser2;
+  isSuperFollowingUser1 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 1);
+  isSuperFollowingUser2 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 2);
+  console.log(`User 1 is a super follower: ${isSuperFollowingUser1}
+  User 2 is a super follower: ${isSuperFollowingUser2}`);
+  console.log("User 2 becomes super follower")
 
-  //   await superFollowModule.connect(user2).upgradeToSuperFollower(profileId, 2, 2, twentyUnits, 0, twentyUnits);
-  //   isSuperFollowingUser1 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 1);
-  //   isSuperFollowingUser2 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 2);
-  //   console.log(`User 1 is a super follower: ${isSuperFollowingUser1}
-  //   User 2 is a super follower: ${isSuperFollowingUser2}`);
+  const currentPrice = await superFollowModule.price(profileId, 2);
+  await superFollowModule.connect(user2).upgradeToSuperFollower(profileId, 2, 2, twoUnits, currentPrice, twoUnits, { gasLimit: 500000 });
+  isSuperFollowingUser1 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 1);
+  isSuperFollowingUser2 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 2);
+  console.log(`User 1 is a super follower: ${isSuperFollowingUser1}
+    User 2 is a super follower: ${isSuperFollowingUser2}`);
 
-  //   console.log("User 1 takes super follower token from user1")
-  //   await superFollowModule.connect(user).upgradeToSuperFollower(profileId, 2, 1, thirtyUnits, twentyUnits, twentyUnits);
-  //   isSuperFollowingUser1 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 1);
-  //   isSuperFollowingUser2 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 2);
-  //   console.log(`User 1 is a super follower: ${isSuperFollowingUser1}
-  //   User 2 is a super follower: ${isSuperFollowingUser2}`);
+  console.log("User 1 takes super follower token from user1")
+  const currentPrice2 = await superFollowModule.price(profileId, 2);
+  await superFollowModule.connect(user).upgradeToSuperFollower(profileId, 2, 1, threeUnits, currentPrice2, threeUnits, { gasLimit: 500000 });
+  isSuperFollowingUser1 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 1);
+  isSuperFollowingUser2 = await superFollowModule.isSuperFollower(profileId, ZERO_ADDRESS /*unused argument*/, 2);
+  console.log(`User 1 is a super follower: ${isSuperFollowingUser1}
+    User 2 is a super follower: ${isSuperFollowingUser2}`);
 });

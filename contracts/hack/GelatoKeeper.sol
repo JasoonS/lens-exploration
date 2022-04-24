@@ -26,11 +26,9 @@ contract GelatoKeeper {
         for (uint256 i = tokenIDStart; i < 10; i++) {
             // Ensure they are a super follower
             address moduleAddress = ILensHub(hub).getFollowModule(profileId);
-            canExec = SuperFollowModule(moduleAddress).isSuperFollower(
-                profileId,
-                address(0), /* unused arg */
-                tokenIDStart
-            );
+            canExec =
+                SuperFollowModule(moduleAddress).patronageOwed(profileId, tokenIDStart) <
+                SuperFollowModule(moduleAddress).deposit(profileId, tokenIDStart);
 
             execPayload = abi.encodeWithSelector(
                 SuperFollowModule(moduleAddress)._collectPatronage.selector,
