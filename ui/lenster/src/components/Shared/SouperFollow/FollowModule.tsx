@@ -99,6 +99,87 @@ const CREATE_FOLLOW_TYPED_DATA_MUTATION = gql`
   }
 `
 
+interface GoldenCircleButtonProps {
+  // setApproved: Dispatch<boolean>
+}
+
+const GoldenCircleButton: FC<GoldenCircleButtonProps> = ({}) => {
+  const { activeChain } = useNetwork()
+  const { data: account } = useAccount()
+
+  //todo args
+  /*
+      uint256 profileId,
+        uint256 oldFollowNFTTokenId,
+        uint256 newFollowNFTTokenId,
+        uint256 _newPrice,
+        uint256 previousPrice,
+        uint256 depositAmount
+  */
+  let profileId = '1'
+  let oldFollowNFTTokenId = '1'
+  let newFollowNFTTokenId = '1'
+  let newPrice = '100'
+  let previousPrice = '0'
+  let depositAmount = '100'
+  const { isLoading: writeLoading, write } = useContractWrite(
+    {
+      addressOrName: '0x5A808C1FD6F0b46a06B51B6ea16a4f8C83124E67',
+      contractInterface: SuperFollowModuleAbi
+    },
+    'upgradeToSuperFollower',
+    {
+      args: [
+        profileId,
+        oldFollowNFTTokenId,
+        newFollowNFTTokenId,
+        newPrice,
+        previousPrice,
+        depositAmount
+      ],
+      onSuccess() {
+        // setJoinedGoldenCircle(true)
+        toast.success('Joined golden circle successfully!')
+        trackEvent('Joined golden circle')
+      },
+      onError(error) {
+        toast.error(error?.message)
+      }
+    }
+  )
+
+  // Hackathon todo: Cater to our follow module
+  const createGoldenCircleFollow = () => {
+    if (!account?.address) {
+      toast.error(CONNECT_WALLET)
+    } else if (activeChain?.id !== CHAIN_ID) {
+      toast.error(WRONG_NETWORK)
+    } else {
+      write()
+      console.log('call the contract function')
+    }
+  }
+
+  return (
+    <Button
+      className="text-sm !px-3 !py-1.5 "
+      variant="gold"
+      outline
+      onClick={createGoldenCircleFollow}
+      disabled={writeLoading}
+      icon={
+        writeLoading ? (
+          <Spinner variant="super" size="xs" />
+        ) : (
+          <FireIcon className="w-4 h-4" />
+        )
+      }
+    >
+      Join the golden circle
+    </Button>
+  )
+}
+
 interface CustomApproveProps {
   setApproved: Dispatch<boolean>
 }
@@ -207,25 +288,6 @@ const FollowModule: FC<Props> = ({
   const followModule: FeeFollowModuleSettings =
     data?.profiles?.items[0]?.followModule
 
-  // const { data: allowanceData, loading: allowanceLoading } = useQuery(
-  //   ALLOWANCE_SETTINGS_QUERY,
-  //   {
-  //     variables: {
-  //       request: {
-  //         currencies: followModule?.amount?.asset?.address,
-  //         followModules: 'FeeFollowModule',
-  //         collectModules: [],
-  //         referenceModules: []
-  //       }
-  //     },
-  //     skip: !followModule?.amount?.asset?.address || !currentUser,
-  //     onCompleted(data) {
-  //       setAllowed(data?.approvedModuleAllowanceAmount[0]?.allowance !== '0x00')
-  //       consoleLog('Query', '#8b5cf6', `Fetched allowance data`)
-  //     }
-  //   }
-  // )
-
   const [createFollowTypedData, { loading: typedDataLoading }] = useMutation(
     CREATE_FOLLOW_TYPED_DATA_MUTATION,
     {
@@ -289,37 +351,6 @@ const FollowModule: FC<Props> = ({
     }
   }
 
-  // Hackathon todo: Cater to our follow module
-  const createGoldenCircleFollow = () => {
-    if (!account?.address) {
-      toast.error(CONNECT_WALLET)
-    } else if (activeChain?.id !== CHAIN_ID) {
-      toast.error(WRONG_NETWORK)
-    } else {
-      const [{ data, error, loading }, write] = useContractWrite(
-        {
-          addressOrName: '0x5A808C1FD6F0b46a06B51B6ea16a4f8C83124E67',
-          contractInterface: SuperFollowModuleAbi
-        },
-        'upgradeToSuperFollower',
-        {
-          args: [],
-          onSuccess() {
-            // setFollowing(true)
-            // setShowFollowModal(false)
-            toast.success('Joined golden circle successfully!')
-            trackEvent('Joined golden circle')
-          },
-          onError(error) {
-            toast.error(error?.message)
-          }
-        }
-      )
-
-      console.log('call the contract function')
-    }
-  }
-
   const harbergerDataSchema = object({
     salePrice: string()
       .min(1, { message: 'Invalid value' })
@@ -337,9 +368,6 @@ const FollowModule: FC<Props> = ({
     }
   })
 
-  // console.log('form')
-  // console.log(form.getValues())
-
   const numberOfGoldenCircleNfts = 10 // hackathon TODO: pull from contracts
 
   let [salePriceState, setSalePriceState] = useState(1200)
@@ -350,16 +378,6 @@ const FollowModule: FC<Props> = ({
     setDepositState(deposit)
     setSalePriceState(salePrice)
   }
-
-  // console.log('form')
-  // console.log(form.formState.dirtyFields)
-
-  // useEffect(() => {
-  //   let { salePrice } = form.getValues()
-  //   console.log('salePrice')
-  //   console.log(salePrice)
-  //   setSalePriceState(salePrice)
-  // }, [form.formState.dirtyFields])
 
   if (loading) return <Loader message="Loading super follow" />
 
@@ -464,22 +482,7 @@ const FollowModule: FC<Props> = ({
               <CustomApproveButton setApproved={setApproved} />
             </div>
           ) : null}
-          <Button
-            className="text-sm !px-3 !py-1.5 "
-            variant="gold"
-            outline
-            onClick={createGoldenCircleFollow}
-            disabled={typedDataLoading || signLoading || writeLoading}
-            icon={
-              typedDataLoading || signLoading || writeLoading ? (
-                <Spinner variant="super" size="xs" />
-              ) : (
-                <FireIcon className="w-4 h-4" />
-              )
-            }
-          >
-            Join the golden circle
-          </Button>
+          <GoldenCircleButton />
         </div>
       ) : null}
     </div>
