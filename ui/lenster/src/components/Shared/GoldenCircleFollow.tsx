@@ -69,11 +69,12 @@ const Follow: FC<Props> = ({ profile, showText = false, setFollowing }) => {
   })
   const { isLoading: writeLoading, write } = useContractWrite(
     {
-      addressOrName: LENSHUB_PROXY,
+      addressOrName: '0x023D78C83bfd24cab5b07E11e14a0333eF4CbD4f',
       contractInterface: LensHubProxy
     },
     'followWithSig',
     {
+      // args: [[1], [[]]],
       onSuccess() {
         setFollowing(true)
         toast.success('Followed successfully!')
@@ -94,27 +95,29 @@ const Follow: FC<Props> = ({ profile, showText = false, setFollowing }) => {
         createFollowTypedData: CreateFollowBroadcastItemResult
       }) {
         consoleLog('Mutation', '#4ade80', 'Generated createFollowTypedData')
-        const { typedData } = createFollowTypedData
-        signTypedDataAsync({
-          domain: omit(typedData?.domain, '__typename'),
-          types: omit(typedData?.types, '__typename'),
-          value: omit(typedData?.value, '__typename')
-        }).then((signature) => {
-          const { profileIds, datas: followData } = typedData?.value
-          const { v, r, s } = splitSignature(signature)
-          const inputStruct = {
-            follower: account?.address,
-            profileIds,
-            datas: followData,
-            sig: {
-              v,
-              r,
-              s,
-              deadline: typedData.value.deadline
-            }
-          }
-          write({ args: inputStruct })
-        })
+        // const { typedData } = createFollowTypedData
+        // signTypedDataAsync({
+        //   domain: omit(typedData?.domain, '__typename'),
+        //   types: omit(typedData?.types, '__typename'),
+        //   value: omit(typedData?.value, '__typename')
+        // }).then((signature) => {
+        //   let pId = 1
+        //   const { profileIds, datas: followData } = typedData?.value
+        //   const { v, r, s } = splitSignature(signature)
+        //   const inputStruct = {
+        //     follower: account?.address,
+        //     pId,
+        //     datas: followData,
+        //     sig: {
+        //       v,
+        //       r,
+        //       s,
+        //       deadline: typedData.value.deadline
+        //     }
+        //   }
+        //   write({ args: inputStruct })
+        // })
+        write()
       },
       onError(error) {
         toast.error(error.message ?? ERROR_MESSAGE)

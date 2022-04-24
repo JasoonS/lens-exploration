@@ -7,6 +7,7 @@ import Link from 'next/link'
 import React, { FC, useState } from 'react'
 
 import Follow from './Follow'
+import GoldenCircleFollow from './GoldenCircleFollow'
 import Slug from './Slug'
 import SuperFollow from './SuperFollow'
 import SouperFollow from './SouperFollow'
@@ -76,6 +77,7 @@ const UserProfile: FC<Props> = ({
         ) : (
           <div>
             <Follow profile={profile} setFollowing={setFollowing} />
+            <GoldenCircleFollow profile={profile} setFollowing={setFollowing} />
             <SouperFollow profile={profile} setFollowing={setFollowing} />
           </div>
         ))}

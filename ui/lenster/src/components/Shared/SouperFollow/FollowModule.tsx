@@ -124,7 +124,7 @@ const GoldenCircleButton: FC<GoldenCircleButtonProps> = ({}) => {
   let depositAmount = '100'
   const { isLoading: writeLoading, write } = useContractWrite(
     {
-      addressOrName: '0x5A808C1FD6F0b46a06B51B6ea16a4f8C83124E67',
+      addressOrName: '0x9c4c4eC891c25ad8Bde957952D1285f16417725A',
       contractInterface: SuperFollowModuleAbi
     },
     'upgradeToSuperFollower',
@@ -188,7 +188,7 @@ const CustomApproveButton: FC<CustomApproveProps> = ({ setApproved }) => {
   const { activeChain } = useNetwork()
   const { data: account } = useAccount()
 
-  let spender = '0x5A808C1FD6F0b46a06B51B6ea16a4f8C83124E67' // hackathon TODO: be careful of possible redeployment
+  let spender = '0x9c4c4eC891c25ad8Bde957952D1285f16417725A' // hackathon TODO: be careful of possible redeployment
   let amount = '999999999999999999999999'
 
   const { isLoading: writeLoading, write } = useContractWrite(

@@ -3,6 +3,7 @@ import 'linkify-plugin-hashtag'
 
 import { gql, useQuery } from '@apollo/client'
 import Follow from '@components/Shared/Follow'
+import GoldenCircleFollow from '@components/Shared/GoldenCircleFollow'
 import Slug from '@components/Shared/Slug'
 import SuperFollow from '@components/Shared/SuperFollow'
 import SouperFollow from '@components/Shared/SouperFollow'
@@ -158,6 +159,11 @@ const Details: FC<Props> = ({ profile }) => {
           ) : (
             <div>
               <Follow profile={profile} setFollowing={setFollowing} showText />
+              <GoldenCircleFollow
+                profile={profile}
+                setFollowing={setFollowing}
+                showText
+              />
               <SouperFollow
                 profile={profile}
                 setFollowing={setFollowing}

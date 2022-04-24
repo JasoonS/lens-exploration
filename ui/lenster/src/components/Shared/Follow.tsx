@@ -69,7 +69,8 @@ const Follow: FC<Props> = ({ profile, showText = false, setFollowing }) => {
   })
   const { isLoading: writeLoading, write } = useContractWrite(
     {
-      addressOrName: LENSHUB_PROXY,
+      // addressOrName: LENSHUB_PROXY,
+      addressOrName: '0x023D78C83bfd24cab5b07E11e14a0333eF4CbD4f',
       contractInterface: LensHubProxy
     },
     'followWithSig',
